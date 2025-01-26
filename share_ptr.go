@@ -28,7 +28,9 @@ func MakeShare[T any](value T) *SharePtr[T] {
 	}
 
 	runtime.SetFinalizer(sp, func(p *SharePtr[T]) {
-		p.memory.Free()
+		if p.gc {
+			p.memory.Free()
+		}
 	})
 
 	return sp

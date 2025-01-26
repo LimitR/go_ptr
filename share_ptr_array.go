@@ -50,9 +50,11 @@ func MakeShareArray[T any](len, cap int) *SharePtrArray[T] {
 		iterMemory,
 	}
 
-	runtime.SetFinalizer(spa, func(a *SharePtrArray[T]) {
-		a.memory.Free()
-		a.iterMemory.Free()
+	runtime.SetFinalizer(spa, func(p *SharePtrArray[T]) {
+		if p.gc {
+			p.memory.Free()
+			p.iterMemory.Free()
+		}
 	})
 
 	return spa
