@@ -2,6 +2,7 @@ package share_ptr
 
 import (
 	"arena"
+	"runtime"
 	"unsafe"
 )
 
@@ -36,7 +37,7 @@ func MakeShareArray[T any](len, cap int) *SharePtrArray[T] {
 
 	pointerFirstElement := unsafe.Pointer(&array[0])
 
-	return &SharePtrArray[T]{
+	spa := &SharePtrArray[T]{
 		SharePtr[T]{
 			counter: 1,
 			pointer: pointer,
@@ -48,6 +49,12 @@ func MakeShareArray[T any](len, cap int) *SharePtrArray[T] {
 		pointerFirstElement,
 		iterMemory,
 	}
+
+	runtime.SetFinalizer(spa, func(a *SharePtrArray[T]) {
+		a.Free()
+	})
+
+	return spa
 }
 
 func (s *SharePtrArray[T]) Append(value T) {
@@ -63,8 +70,6 @@ func (s *SharePtrArray[T]) Append(value T) {
 }
 
 // GetElement element by index
-//
-//go:nocheckptr
 func (s *SharePtrArray[T]) GetElement(index int) *T {
 	if s.pointer == nil || len(s.array)-1 < index {
 		return nil
@@ -72,13 +77,15 @@ func (s *SharePtrArray[T]) GetElement(index int) *T {
 	return (*T)(unsafe.Add(s.pointerFirstElement, uintptr(index)*s.sizeElement))
 }
 
-// GetElement element by index
 func (s *SharePtrArray[T]) Get() *[]T {
 	s.mutex.Lock()
 	defer s.mutex.Unlock()
 
 	return (*[]T)(s.pointer)
 }
+
+// SetValue not used
+func (s *SharePtrArray[T]) SetValue(value T) {}
 
 func (s *SharePtrArray[T]) Iter() func() *T {
 	s.mutex.Lock()
@@ -112,9 +119,8 @@ func (s *SharePtrArray[T]) Free() {
 		return
 	}
 	if s.counter-1 <= 0 {
+		go runtime.GC()
 		s.pointer = nil
-		s.memory.Free()
-		s.iterMemory.Free()
 		s.pointerFirstElement = nil
 		s.first = false
 		s.array = nil

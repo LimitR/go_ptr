@@ -2,6 +2,7 @@ package share_ptr
 
 import (
 	"arena"
+	"runtime"
 	"sync"
 	"unsafe"
 )
@@ -18,11 +19,18 @@ func MakeShare[T any](value T) *SharePtr[T] {
 	v := arena.New[T](memory)
 	*v = value
 	pointer := unsafe.Pointer(v)
-	return &SharePtr[T]{
+
+	sp := &SharePtr[T]{
 		counter: 1,
 		pointer: pointer,
 		memory:  memory,
 	}
+
+	runtime.SetFinalizer(sp, func(p *SharePtr[T]) {
+		p.Free()
+	})
+
+	return sp
 }
 
 func (s *SharePtr[T]) Free() {
@@ -33,8 +41,8 @@ func (s *SharePtr[T]) Free() {
 		return
 	}
 	if s.counter-1 <= 0 {
+		go runtime.GC()
 		s.pointer = nil
-		s.memory.Free()
 	}
 	s.counter--
 }

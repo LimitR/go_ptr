@@ -1,4 +1,9 @@
 # go_ptr
+
+```shell
+go get -u github.com/LimitR/go_ptr
+```
+
 ```go
 func main() {
     valuePtr := share_ptr.MakeShare("hello")
