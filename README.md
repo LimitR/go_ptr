@@ -27,6 +27,8 @@ func main() {
     valuePtr.Free()
 
     *someValuePtr.Get() = "not hello"
+    // Or
+    someValuePtr.SetValue("not hello") // New pointer
 
     fmt.Println(*valuePtr.Get())     // 'not hello'
     fmt.Println(*someValuePtr.Get()) // 'not hello'
@@ -65,4 +67,10 @@ func main() {
 
     fmt.Println(array.GetElement(2)) // nil
 }
+```
+
+## GC
+```go
+valuePtr := share_ptr.MakeShare("hello").EnableGCHowFree()
+valuePtr.Free() // Start goroutine with GC
 ```

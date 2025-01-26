@@ -12,6 +12,7 @@ type SharePtr[T any] struct {
 	memory  *arena.Arena
 	pointer unsafe.Pointer
 	counter int
+	gc      bool
 }
 
 func MakeShare[T any](value T) *SharePtr[T] {
@@ -41,10 +42,19 @@ func (s *SharePtr[T]) Free() {
 		return
 	}
 	if s.counter-1 <= 0 {
-		go runtime.GC()
+		if s.gc {
+			go runtime.GC()
+		} else {
+			s.memory.Free()
+		}
 		s.pointer = nil
 	}
 	s.counter--
+}
+
+func (s *SharePtr[T]) EnableGCHowFree() *SharePtr[T] {
+	s.gc = true
+	return s
 }
 
 func (s *SharePtr[T]) Copy() *SharePtr[T] {
@@ -77,5 +87,7 @@ func (s *SharePtr[T]) SetValue(value T) {
 		return
 	}
 
-	*(*T)(s.pointer) = value
+	v := arena.New[T](s.memory)
+	*v = value
+	s.pointer = unsafe.Pointer(v)
 }

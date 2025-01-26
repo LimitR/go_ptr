@@ -120,7 +120,12 @@ func (s *SharePtrArray[T]) Free() {
 		return
 	}
 	if s.counter-1 <= 0 {
-		go runtime.GC()
+		if s.gc {
+			go runtime.GC()
+		} else {
+			s.memory.Free()
+			s.iterMemory.Free()
+		}
 		s.pointer = nil
 		s.pointerFirstElement = nil
 		s.first = false
