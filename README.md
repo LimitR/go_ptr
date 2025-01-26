@@ -1,7 +1,7 @@
 # go_ptr
 
 ```shell
-go get -u github.com/LimitR/go_ptr
+go get github.com/LimitR/go_ptr
 ```
 
 ```go
